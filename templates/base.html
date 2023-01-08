@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=500"/>
+	<script>
+		init = () => {
+			document.getElementsByClassName('toggle')[0].style.display = ''
+			{% block init %}{% endblock %}
+		}
+		{% block script %}{% endblock %}
+		ls = window.localStorage
+		toggle = () => {
+			if (ls.getItem('dark')) {
+				ls.removeItem('dark')
+				b.classList = []
+			} else {
+				ls.setItem('dark', true)
+				b.classList = ['dark']
+			}
+		}
+	</script>
+	<style>
+		* { font-family: Roboto, sans-serif; text-decoration: none; }
+		body, body * { background: #fff; color: #000; }
+		body a, body a * { color: #00e; }
+		body a:visited, body a:visited * { color: #707; }
+		body.dark, body.dark * { background: #222; color: #ddd; }
+		body.dark a, body.dark a * { color: #99f !important; }
+		body.dark a:visited, body.dark a:visited * { color: #a6a !important; }
+		.toggle { position: absolute; top: 1ex; right: 1ex; }
+		.toggle::after { content: "🌚" }
+		body.dark .toggle::after { content: "🌞" }
+		pre { display: block; margin: 0 1em; }
+		{% block style %}{% endblock %}
+	</style>
+	<title>The VGV Compendium{% block title %}{% endblock %}</title>
+</head>
+<body onload="init()">
+	<script>
+		b = document.getElementsByTagName('body')[0]
+		if (ls.getItem('dark')) b.classList = ['dark']
+	</script>
+	<a href="javascript:toggle()" class="toggle" style="display:none"></a>
+	{% block body %}{% endblock %}
+</body>
+</html>

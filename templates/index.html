@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block init %}
+	filter().addEventListener('input', update)
+	filter().parentElement.parentElement.style.display = ''
+	update()
+{% endblock %}
+{% block script %}
+	filter = () => document.getElementById('filter')
+	update = () => {
+		c = 0
+		t = document.getElementsByTagName('tr')
+		v = filter().value.toLowerCase()
+		for (i = 2; i < t.length; i++) {
+			h = t[i].classList.length
+			if (v && t[i].children[0].innerText.toLowerCase().indexOf(v) < 0) {
+				if (!h) { t[i].classList = ['hide'] }
+			} else {
+				c++
+				if (h) { t[i].classList = [] }
+			}
+		}
+		document.getElementById('count').innerText = '' + c + '/' + (t.length-2)
+	}
+{% endblock %}
+{% block style %}
+	.detail { padding: 0.5ex; }
+	.detail a { display: block; padding: 0.5ex; }
+	.detail a:hover { background: #9996; border-radius: 1ex; }
+	.hide { display: none; }
+	input { border: solid 1px #999; width: 100%; }
+	table { border-collapse: collapse; }
+	td { padding: 1ex; vertical-align: top; }
+	tr+tr { border-top: solid 1px #999; }
+{% endblock %}
+{% block body %}
+	<h1>The Video Game Valley <sub>Compendium <sup><a href="mailto:vgv-compendium@covertbagel.com">WIP</a></sup></sub></h1>
+	{%- if email %}
+		Logged in as {% if admin %}admin {% endif %}{{ email }}. <a href="{{ logout }}">Logout</a>
+	{%- else %}
+		<a href="{{ login }}">Login</a>
+	{%- endif %}
+	<h4>
+		{{ items|length }} items in the <a href="https://www.youtube.com/playlist?list=PLI6HmVcz0NXquDc4QenBMxidVeFue6E08">playlist</a>.
+		Download as <a href="/csv">CSV</a>
+	</h4>
+	<table>
+		<tr style="display:none"><td><input id="filter" placeholder="filter"/></td><td id="count"></td></tr>
+		<tr><th>title</th><th>~aired</th></tr>
+		{%- for item in items %}
+		<tr>
+			<td>
+				<a href="https://www.youtube.com/watch?v={{ item.video_id }}">{{ item.title }}</a>
+				{%- with n=notes[item.video_id] %}
+				{%- if n %}
+				<pre>{{ n }}</pre>
+				{%- endif %}
+				{%- endwith %}
+			</td>
+			<td>{{ item.video_published_at|to_date }}</td>
+			<td class="detail"><a href="/detail/{{ item.video_id }}">🔎</a></td>
+		</tr>
+		{%- endfor %}
+	</table>
+{% endblock %}
