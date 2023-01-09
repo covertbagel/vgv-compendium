@@ -22,6 +22,7 @@ _CACHE_SECS_LONG = 86400  # 1 day.
 _CACHE_SECS_SHORT = 1800  # 30 minutes.
 _DATE_CORRECTION = timedelta(hours=4, minutes=10)
 _DERIVED_NOTES_KEY = 'derived_notes'
+_HOST = 'vgv-compendium.uc.r.appspot.com'
 _PARAMS = {
     'key': YT_DATA_API_KEY,
     'maxResults': '50',
@@ -50,9 +51,9 @@ def root():
     return render_template('index.html',
                            admin=users.is_current_user_admin(),
                            email=user.email() if user else '',
+                           host=_HOST,  # TODO: Use localhost:8080 on dev.
                            items=playlist_items(),
                            login='' if user else users.create_login_url('/'),
-                           logout=users.create_logout_url('/') if user else '',
                            notes=get_derived_notes())
 
 

@@ -33,12 +33,14 @@
 	tr+tr { border-top: solid 1px #999; }
 {% endblock %}
 {% block body %}
-	<h1>The Video Game Valley <sub>Compendium <sup><a href="mailto:vgv-compendium@covertbagel.com">WIP</a></sup></sub></h1>
+	<h1>The Video Game Valley <sub>Compendium</sub></h1>
 	{%- if email %}
-		Logged in as {% if admin %}admin {% endif %}{{ email }}. <a href="{{ logout }}">Logout</a>
+		Logged in as {% if admin %}admin {% endif %}{{ email }}.
+		<a href="/_ah/logout?continue=https%3A%2F%2F{{ host }}">Logout</a>.
 	{%- else %}
-		<a href="{{ login }}">Login</a>
+		<a href="{{ login }}">Login</a>.
 	{%- endif %}
+	<a href="mailto:vgv-compendium@covertbagel.com">Send feedback</a>
 	<h4>
 		{{ items|length }} items in the <a href="https://www.youtube.com/playlist?list=PLI6HmVcz0NXquDc4QenBMxidVeFue6E08">playlist</a>.
 		Download as <a href="/csv">CSV</a>
