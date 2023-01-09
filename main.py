@@ -10,6 +10,7 @@ from flask import abort, Flask, redirect, render_template, request, send_file, u
 from google.appengine.api import memcache, users, wrap_wsgi_app
 from google.cloud import datastore
 from requests import Session
+import yt_dlp
 
 from secrets import YT_DATA_API_KEY
 
@@ -89,6 +90,14 @@ def detail(video_id):
                            msg=request.args.get('msg'))
 
 
+@app.route('/raw-info/<video_id>')
+def raw_info(video_id):
+    item = get_item(video_id)
+    if not item or not users.is_current_user_admin():
+        abort(404)
+    return render_template('pprint.html', value=get_info(item))
+
+
 @app.route('/save-detail/<video_id>', methods=['POST'])
 def save_detail(video_id):
     item = get_item(video_id)
@@ -131,6 +140,22 @@ def save_detail(video_id):
                             video_id=video_id))
 
 
+@app.route('/storyboard/<video_id>')
+def storyboard(video_id):
+    item = get_item(video_id)
+    if not item:
+        abort(404)
+    result = []
+    for f in get_info(item)['formats']:
+        if f['format_id'] in ('sb2', 'sb1'):
+            result.append({k: f[k] for k in (
+                'columns', 'format_id', 'fragments', 'height', 'rows', 'width',
+            )})
+            if len(result) == 2:
+                break
+    return result
+
+
 class Detail:
     def __init__(self, entity):
         self._entity = entity
@@ -168,6 +193,18 @@ def item(i):
             title=clean_title(i['snippet']['title']),
             video_id=i['contentDetails']['videoId'],
             video_published_at=i['contentDetails']['videoPublishedAt'])
+
+
+def get_info(item):
+    key = f'info:{item.video_id}'
+    if info := memcache.get(key):
+        return info
+    with yt_dlp.YoutubeDL(params={'format': 'sb0'}, auto_init=False) as ydl:
+        ydl.get_info_extractor('Youtube')
+        info = ydl.extract_info(f'http://youtube.com/watch?v={item.video_id}',
+                                download=False)
+    memcache.add(key, info, time=_CACHE_SECS_LONG)
+    return info
 
 
 def get_item(video_id):
