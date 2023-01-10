@@ -32,7 +32,7 @@
 			req.responseType = 'json';
 			req.send();
 		};
-		const fail_sb = () => sb.innerText = '. Sorry, storyboard is :(';
+		const fail_sb = () => sb.innerText = '. Storyboard is :(';
 		const show_sb = (start, stop) => {
 			let h = '';
 			let t = 0;
@@ -75,11 +75,15 @@
 	<div>{{ msg }}</div>
 	{%- endif %}
 	<h2>{{ item.title }}</h2>
+	<div>
+		{%- if next %}<a href="/detail/{{ next.video_id }}">↑ Next</a>{% if prev %}. {% endif %}{% endif %}
+		{%- if prev %}<a href="/detail/{{ prev.video_id }}">Previous ↓</a>{% endif -%}
+	</div>
 	<div id="viz">
 		<img src="https://i.ytimg.com/vi/{{ item.video_id }}/maxresdefault.jpg"/>
 	</div>
 	<a href="https://www.youtube.com/watch?v={{ item.video_id }}">Watch</a><span id="sb" style="display:none">.
-	<a href="javascript:load_sb()">View storyboard</a></span><br/>
+	<a href="javascript:load_sb()">Storyboard</a></span><br/>
 	Published at {{ item.video_published_at }}.
 	Estimated air date {{ item.video_published_at|to_date }}
 	<form action="/save-detail/{{ item.video_id }}" method="post">

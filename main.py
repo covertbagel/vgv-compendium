@@ -80,7 +80,7 @@ def csv():
 
 @app.route('/detail/<video_id>')
 def detail(video_id):
-    item = get_item(video_id)
+    item, next, prev = get_item(video_id)
     if not item:
         abort(404)
     detail = get_detail(video_id)
@@ -88,12 +88,14 @@ def detail(video_id):
                            admin=users.is_current_user_admin(),
                            detail=detail,
                            item=item,
-                           msg=request.args.get('msg'))
+                           msg=request.args.get('msg'),
+                           next=next,
+                           prev=prev)
 
 
 @app.route('/raw-info/<video_id>')
 def raw_info(video_id):
-    item = get_item(video_id)
+    item, _, _ = get_item(video_id)
     if not item or not users.is_current_user_admin():
         abort(404)
     return render_template('pprint.html', value=get_info(item))
@@ -101,7 +103,7 @@ def raw_info(video_id):
 
 @app.route('/save-detail/<video_id>', methods=['POST'])
 def save_detail(video_id):
-    item = get_item(video_id)
+    item, _, _ = get_item(video_id)
     if not item or not users.is_current_user_admin():
         abort(404)
     notes = request.form.get('notes', '').strip()
@@ -143,7 +145,7 @@ def save_detail(video_id):
 
 @app.route('/storyboard/<video_id>')
 def storyboard(video_id):
-    item = get_item(video_id)
+    item, _, _ = get_item(video_id)
     if not item:
         abort(404)
     result = []
@@ -209,9 +211,16 @@ def get_info(item):
 
 
 def get_item(video_id):
+    item, next, prev = None, None, None
     for i in playlist_items():
+        if item:
+            prev = i
+            break
         if video_id == i.video_id:
-            return i
+            item = i
+            continue
+        next = i
+    return item, next, prev
 
 
 class Summary:
