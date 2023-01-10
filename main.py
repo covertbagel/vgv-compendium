@@ -18,7 +18,7 @@ app = Flask(__name__)
 app.wsgi_app = wrap_wsgi_app(app.wsgi_app)
 db = datastore.Client()
 
-_CACHE_SECS_LONG = 86400  # 1 day.
+_CACHE_SECS_LONG = 7 * 86400  # 1 week.
 _CACHE_SECS_SHORT = 1800  # 30 minutes.
 _DATE_CORRECTION = timedelta(hours=4, minutes=10)
 _DERIVED_NOTES_KEY = 'derived_notes'
