@@ -1,37 +1,37 @@
 {% extends "base.html" %}
 {% block init %}
-	filter().addEventListener('input', update)
-	filter().parentElement.parentElement.style.display = ''
-	update()
-{% endblock %}
+			const filter = document.getElementById('filter');
+			filter.addEventListener('input', update);
+			filter.parentElement.parentElement.style.display = '';
+			update();
+{%- endblock %}
 {% block script %}
-	filter = () => document.getElementById('filter')
-	update = () => {
-		c = 0
-		t = document.getElementsByTagName('tr')
-		v = filter().value.toLowerCase()
-		for (i = 2; i < t.length; i++) {
-			h = t[i].classList.length
-			if (v && t[i].children[0].innerText.toLowerCase().indexOf(v) < 0) {
-				if (!h) { t[i].classList = ['hide'] }
-			} else {
-				c++
-				if (h) { t[i].classList = [] }
+		const update = () => {
+			let c = 0;
+			const t = document.getElementsByTagName('tr');
+			const v = filter.value.toLowerCase();
+			for (let i = 2; i < t.length; i++) {
+				const h = t[i].classList.length;
+				if (v && t[i].children[0].innerText.toLowerCase().indexOf(v) < 0) {
+					if (!h) { t[i].classList = ['hide']; }
+				} else {
+					c++;
+					if (h) { t[i].classList = []; }
+				}
 			}
-		}
-		document.getElementById('count').innerText = '' + c + '/' + (t.length-2)
-	}
-{% endblock %}
+			document.getElementById('count').innerText = '' + c + '/' + (t.length-2);
+		};
+{%- endblock %}
 {% block style %}
-	.detail { padding: 0.5ex; }
-	.detail a { display: block; padding: 0.5ex; }
-	.detail a:hover { background: #9996; border-radius: 1ex; }
-	.hide { display: none; }
-	input { border: solid 1px #999; width: 100%; }
-	table { border-collapse: collapse; }
-	td { padding: 1ex; vertical-align: top; }
-	tr+tr { border-top: solid 1px #999; }
-{% endblock %}
+		.detail { padding: 0.5ex; }
+		.detail a { display: block; padding: 0.5ex; }
+		.detail a:hover { background: #9996; border-radius: 1ex; }
+		.hide { display: none; }
+		input { border: solid 1px #999; width: 100%; }
+		table { border-collapse: collapse; }
+		td { padding: 1ex; vertical-align: top; }
+		tr+tr { border-top: solid 1px #999; }
+{%- endblock %}
 {% block body %}
 	<h1>The Video Game Valley <sub>Compendium</sub></h1>
 	{%- if email %}
@@ -63,4 +63,4 @@
 		</tr>
 		{%- endfor %}
 	</table>
-{% endblock %}
+{%- endblock %}

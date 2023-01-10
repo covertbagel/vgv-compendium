@@ -4,21 +4,22 @@
 	<meta charset="utf-8"/>
 	<meta name="viewport" content="width=500"/>
 	<script>
-		init = () => {
-			document.getElementsByClassName('toggle')[0].style.display = ''
-			{% block init %}{% endblock %}
-		}
-		{% block script %}{% endblock %}
-		ls = window.localStorage
-		toggle = () => {
+		"use strict";
+		const init = () => {
+			document.getElementsByClassName('toggle')[0].style.display = '';
+			{%- block init %}{% endblock %}
+		};
+		{%- block script %}{% endblock %}
+		const ls = window.localStorage;
+		const toggle = () => {
 			if (ls.getItem('dark')) {
-				ls.removeItem('dark')
-				b.classList = []
+				ls.removeItem('dark');
+				b.classList = [];
 			} else {
-				ls.setItem('dark', true)
-				b.classList = ['dark']
+				ls.setItem('dark', true);
+				b.classList = ['dark'];
 			}
-		}
+		};
 	</script>
 	<style>
 		* { font-family: Roboto, sans-serif; text-decoration: none; }
@@ -32,7 +33,7 @@
 		.toggle::after { content: "🌚" }
 		body.dark .toggle::after { content: "🌞" }
 		pre { display: block; margin: 0 1em; }
-		{% block style %}{% endblock %}
+		{%- block style %}{% endblock %}
 	</style>
 	<title>The VGV Compendium{% block title %}{% endblock %}</title>
 </head>
@@ -42,6 +43,6 @@
 		if (ls.getItem('dark')) b.classList = ['dark']
 	</script>
 	<a href="javascript:toggle()" class="toggle" style="display:none"></a>
-	{% block body %}{% endblock %}
+	{%- block body %}{% endblock %}
 </body>
 </html>
