@@ -148,14 +148,17 @@ def storyboard(video_id):
     item, _, _ = get_item(video_id)
     if not item:
         abort(404)
+    key = f'sb:{item.video_id}'
+    if result := memcache.get(key):
+        return result
     result = []
     for f in get_info(item)['formats']:
-        if f['format_id'] in ('sb2', 'sb1'):
+        if f['format_id'] == 'sb1':
             result.append({k: f[k] for k in (
                 'columns', 'format_id', 'fragments', 'height', 'rows', 'width',
             )})
-            if len(result) == 2:
-                break
+            break
+    memcache.add(key, result, time=_CACHE_SECS_LONG)
     return result
 
 
@@ -199,15 +202,11 @@ def item(i):
 
 
 def get_info(item):
-    key = f'info:{item.video_id}'
-    if info := memcache.get(key):
-        return info
+    # Info can be >1MB after pickling so can't easily memcache.
     with yt_dlp.YoutubeDL(params={'format': 'sb0'}, auto_init=False) as ydl:
         ydl.get_info_extractor('Youtube')
-        info = ydl.extract_info(f'http://youtube.com/watch?v={item.video_id}',
+        return ydl.extract_info(f'http://youtube.com/watch?v={item.video_id}',
                                 download=False)
-    memcache.add(key, info, time=_CACHE_SECS_LONG)
-    return info
 
 
 def get_item(video_id):
