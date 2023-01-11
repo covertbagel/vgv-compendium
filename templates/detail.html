@@ -10,21 +10,23 @@
 			sb.innerText = '. Storyboard loading...';
 			let req = new XMLHttpRequest();
 			req.addEventListener('load', () => {
-				for (let i = 0; i < req.response.length; i++) {
-					let f = req.response[i];
-					if (f.format_id === 'sb1') {
-						frags = f.fragments;
-						let total = 0;
-						for (let j = 0; j < frags.length; j++) {
-							total += frags[j].duration;
-							if (total > 55*60) {
-								return show_sb(j, j+1);
+				try {
+					for (let i = 0; i < req.response.length; i++) {
+						let f = req.response[i];
+						if (f.format_id === 'sb1') {
+							frags = f.fragments;
+							let total = 0;
+							for (let j = 0; j < frags.length; j++) {
+								total += frags[j].duration;
+								if (total > 55*60) {
+									return show_sb(j, j+1);
+								}
 							}
+							{#- Could do something smarter for this case... #}
+							return show_sb(0, 1);
 						}
-						{#- Could do something smarter for this case... #}
-						return show_sb(0, 1);
 					}
-				}
+				} catch {}
 				fail_sb();
 			});
 			req.addEventListener('error', fail_sb);
@@ -64,7 +66,7 @@
 		};
 {%- endblock %}
 {% block style %}
-		img, textarea { border-radius: 1ex; height: 270px; width: 480px; }
+		img, textarea { border-radius: 1ex; width: 480px; }
 		textarea { border: solid 1px #999; height: 200px; }
 		button { background: #9996 !important; border: solid 1px #999; }
 {%- endblock %}
@@ -80,7 +82,7 @@
 		{%- if prev %}<a href="/detail/{{ prev.video_id }}">Previous ↓</a>{% endif -%}
 	</div>
 	<div id="viz">
-		<img src="https://i.ytimg.com/vi/{{ item.video_id }}/maxresdefault.jpg"/>
+		<img height="270" src="https://i.ytimg.com/vi/{{ item.video_id }}/maxresdefault.jpg"/>
 	</div>
 	<a href="https://www.youtube.com/watch?v={{ item.video_id }}">Watch</a><span id="sb" style="display:none">.
 	<a href="javascript:load_sb()">Storyboard</a></span><br/>
