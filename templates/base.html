@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
 	<meta charset="utf-8"/>
-	<meta name="viewport" content="width=500"/>
+	<meta name="viewport" content="width=device-width"/>
 	<script>
 		"use strict";
 		const init = () => {
+			b.style.transition = 'background .1s, color .1s';
 			document.getElementsByClassName('toggle')[0].style.display = '';
 			{%- block init %}{% endblock %}
 		};
@@ -23,15 +24,16 @@
 	</script>
 	<style>
 		* { font-family: Roboto, sans-serif; text-decoration: none; }
-		body, body * { background: #fff; color: #000; }
-		body a, body a * { color: #00e; }
-		body a:visited, body a:visited * { color: #707; }
-		body.dark, body.dark * { background: #222; color: #ddd; }
-		body.dark a, body.dark a * { color: #99f !important; }
-		body.dark a:visited, body.dark a:visited * { color: #a6a !important; }
-		.toggle { position: absolute; top: 1ex; right: 1ex; }
-		.toggle::after { content: "🌚" }
-		body.dark .toggle::after { content: "🌞" }
+		a { color: #00e; }
+		a:visited { color: #707; }
+		body { background: #fff;  color: #000; margin: 1ex; }
+		body.dark { background :#222;  color: #ddd; }
+		body.dark a { color: #99f }
+		body.dark a:visited { color: #a6a; }
+		.toggle { position: fixed; top: 1ex; right: 1ex; }
+		.toggle::after { background: #fff; border-radius: 50%; content: "🌚" ; display: table-cell; height: 3ex; text-align: center; width:3ex; vertical-align: middle; }
+		body.dark .toggle::after {  background: #222; content: "🌞"; }
+		button, input, textarea { background: inherit; color: inherit; }
 		pre { display: block; margin: 0 1em; }
 		{%- block style %}{% endblock %}
 	</style>
@@ -39,8 +41,8 @@
 </head>
 <body onload="init()">
 	<script>
-		b = document.getElementsByTagName('body')[0]
-		if (ls.getItem('dark')) b.classList = ['dark']
+		const b = document.body;
+		if (ls.getItem('dark')) b.classList = ['dark'];
 	</script>
 	<a href="javascript:toggle()" class="toggle" style="display:none"></a>
 	{%- block body %}{% endblock %}
