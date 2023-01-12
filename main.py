@@ -118,29 +118,29 @@ def save_detail(video_id):
                 video_id=video_id))
     while not acquire_write_lock():
         sleep(1)
-    detail = get_detail(video_id)
-    if (not detail.entries and not notes) or (
-            detail.entries and detail.entries[-1].notes == notes):
-        release_write_lock()
+    try:
+        detail = get_detail(video_id)
+        if (not detail.entries and not notes) or (
+                detail.entries and detail.entries[-1].notes == notes):
+            return redirect(url_for('detail',
+                    msg='Nothing new to save',
+                    video_id=video_id))
+        if detail.etag != request.form.get('etag', ''):
+            return redirect(url_for('detail',
+                    msg='Note has already been modified. Update failed',
+                    video_id=video_id))
+        entry = Entry(author=users.get_current_user().email(),
+                      notes=notes,
+                      timestamp=timestamp())
+        with db.transaction():
+            detail.insert(entry)
+            get_summary()[video_id] = entry
+        memcache.delete(_DERIVED_NOTES_KEY)
         return redirect(url_for('detail',
-                msg='Nothing new to save',
-                video_id=video_id))
-    if detail.etag != request.form.get('etag', ''):
+                                msg='Update successful!',
+                                video_id=video_id))
+    finally:
         release_write_lock()
-        return redirect(url_for('detail',
-                msg='Note has already been modified. Update failed',
-                video_id=video_id))
-    entry = Entry(author=users.get_current_user().email(),
-                  notes=notes,
-                  timestamp=datetime.utcnow().isoformat()[:19]+'Z')
-    with db.transaction():
-        detail.insert(entry)
-        get_summary()[video_id] = entry
-    release_write_lock()
-    memcache.delete(_DERIVED_NOTES_KEY)
-    return redirect(url_for('detail',
-                            msg='Update successful!',
-                            video_id=video_id))
 
 
 @app.route('/storyboard/<video_id>')
@@ -148,17 +148,20 @@ def storyboard(video_id):
     item, _, _ = get_item(video_id)
     if not item:
         abort(404)
-    key = f'sb:{item.video_id}'
-    if result := memcache.get(key):
-        return result
+    key = db.key('sb', video_id)
+    if sb := db.get(key=key):
+        return loads(sb['j'])
     result = []
     for f in get_info(item)['formats']:
-        if f['format_id'] == 'sb1':
+        if f['format_id'] in ('sb0', 'sb1'):
             result.append({k: f[k] for k in (
                 'columns', 'format_id', 'fragments', 'height', 'rows', 'width',
             )})
-            break
-    memcache.add(key, result, time=_CACHE_SECS_LONG)
+            if len(result) == 2:
+                break
+    sb = datastore.Entity(key=key, exclude_from_indexes=('j', 't'))
+    sb.update({'j': dumps(result), 't': timestamp()})
+    db.put(sb)
     return result
 
 
@@ -181,9 +184,12 @@ class Detail:
         return str(hash(self.entries[-1])) if self.entries else ''
 
     def insert(self, entry):
-        self._entity['e'] = self._entity.get('e', [])+[dumps({
+        copy = datastore.Entity(key=self._entity.key,
+                                exclude_from_indexes=('e',))
+        copy['e'] = self._entity.get('e', [])+[dumps({
             'a': entry.author, 'n': entry.notes, 't': entry.timestamp})]
-        db.put(self._entity)
+        db.put(copy)
+        self._entity = copy
         self._entries = None
 
 
@@ -222,6 +228,10 @@ def get_item(video_id):
     return item, next, prev
 
 
+def timestamp():
+    return datetime.utcnow().isoformat()[:19]+'Z'
+
+
 class Summary:
     def __init__(self, entity):
         self._entity = entity
@@ -229,7 +239,11 @@ class Summary:
     def __setitem__(self, video_id, entry):
         self._entity[video_id] = dumps({
             'a': entry.author, 'n': entry.notes, 't': entry.timestamp})
-        db.put(self._entity)
+        copy = datastore.Entity(key=self._entity.key,
+                                exclude_from_indexes=tuple(self._entity.keys()))
+        copy.update(self._entity)
+        db.put(copy)
+        self._entity = copy
 
     def __getitem__(self, video_id):
         if e := self._entity.get(video_id, None):
