@@ -5,76 +5,92 @@
 			const viz = document.getElementById('viz');
 {%- endblock %}
 {% block script %}
-		let frags = null;
-		const load_sb = () => {
+		let frags = {};
+		let zoom = {};
+		const san = x => x.replaceAll('"', '');
+		const sb_load = () => {
 			sb.innerText = '. Storyboard loading...';
 			let req = new XMLHttpRequest();
 			req.addEventListener('load', () => {
 				try {
 					for (let i = 0; i < req.response.length; i++) {
 						let f = req.response[i];
-						if (f.format_id === 'sb1') {
-							frags = f.fragments;
-							let total = 0;
-							for (let j = 0; j < frags.length; j++) {
-								total += frags[j].duration;
-								if (total > 55*60) {
-									return show_sb(j, j+1);
-								}
-							}
-							{#- Could do something smarter for this case... #}
-							return show_sb(0, 1);
+						frags[f.format_id] = f.fragments;
+					}
+					let f = frags['sb1'];
+					let total = 0;
+					for (var j = 0; j < f.length; j++) {
+						total += f[j].duration;
+						if (total > 55*60) {
+							return sb_show(j, j+1);
 						}
 					}
-				} catch {}
-				fail_sb();
+					return sb_show(j-1, j);
+				} catch(e) {
+					console.log(e);
+				}
+				sb_fail();
 			});
-			req.addEventListener('error', fail_sb);
+			req.addEventListener('error', sb_fail);
 			req.open('GET', '/storyboard/{{ item.video_id }}');
 			req.responseType = 'json';
 			req.send();
 		};
-		const fail_sb = () => sb.innerText = '. Storyboard is :(';
-		const show_sb = (start, stop) => {
+		const sb_fail = () => sb.innerText = '. Storyboard is :(';
+		const sb_show = (start, stop) => {
 			let h = '';
 			let t = 0;
-			h += '<div>';
 			if (start > 0) {
-				h += '<a href="javascript:show_sb(' + (start-1) + ', ' + stop + ')">Show earlier</a>. ';
+				h += `<a href="javascript:sb_show(0, ${stop})"/>All</a>. `;
+				h += `<a href="javascript:sb_show(${start-1}, ${stop})"/>More</a>`;
 			}
 			for (let i = 0; i < stop; i++) {
 				if (i >= start) {
-					h += 'At ' + clock(t) + '</div><img src="' + frags[i].url.replaceAll('"', '') + '"><div>';
+					if (i in zoom) {
+						let t2 = t;
+						for (let j = 0; j < 4; j++) {
+							if (i*4+j >= frags['sb0'].length) break;
+							let f = frags['sb0'][i*4+j];
+							h += `<div>At ${clock(t2)}</div><img class="min" onclick="delete zoom[${i}]; sb_show(${start}, ${stop})" src="${san(f.url)}">`;
+							t2 += f.duration;
+						}
+					} else {
+						h += `<div>At ${clock(t)}</div><img class="max" onclick="zoom[${i}]=1; sb_show(${start}, ${stop})" src="${san(frags['sb1'][i].url)}">`;
+					}
 				}
-				t += frags[i].duration;
+				t += frags['sb1'][i].duration;
 			}
-			h += 'At ' + clock(t);
-			if (stop < frags.length) {
-				h += '. <a href="javascript:show_sb(' + start + ', ' + (stop+1) + ')">Show later</a></div>';
+			h += `<div>At ${clock(t)}</div>`;
+			if (stop < frags['sb1'].length) {
+				h += `<a href="javascript:sb_show(${start}, ${stop+1})"/>More</a>. `;
+				h += `<a href="javascript:sb_show(${start}, ${frags['sb1'].length})"/>All</a>`;
 			}
 			sb.innerText = '';
 			viz.innerHTML = h;
 		};
+		const pad = (i) => i > 9 ? i : '0'+i;
 		const clock = (t) => {
 			t = Math.round(t);
-			const s = t % 60;
+			let s = t % 60;
 			t = Math.round((t-s)/60);
-			const m = t % 60;
-			const h = Math.round((t-m)/60);
-			t = (i) => i > 10 ? i : '0'+i;
-			return '' + h + ':' + t(m) + ':' + t(s);
+			let m = t % 60;
+			return `${Math.round((t-m)/60)}:${pad(m)}:${pad(s)}`;
 		};
 {%- endblock %}
 {% block style %}
 		img, textarea { border-radius: 1ex; margin-right: 1ex; width: 480px; }
 		textarea { border: solid 1px #999; height: 114px; padding: 2px; width: 474px; }
 		button { background: #9994; border: solid 1px #999; }
+		.max { cursor: zoom-in; }
+		.min { cursor: zoom-out; }
+		#viz { margin: 1em 0; }
 {%- endblock %}
 {% block title %} - {{ item.title }}{% endblock %}
-{% block body %}
-	<a href="/"><h1>The Video Game Valley <sub>Compendium</sub></h1></a>
+{% block preheader %}<a href="/">{% endblock %}
+{% block postheader %}</a>{% endblock %}
+{% block content %}
 	{%- if msg %}
-	<div>{{ msg }}</div>
+	<p>{{ msg }}</p>
 	{%- endif %}
 	<h2>{{ item.title }}</h2>
 	<div>
@@ -85,7 +101,7 @@
 		<img height="270" src="https://i.ytimg.com/vi/{{ item.video_id }}/maxresdefault.jpg"/>
 	</div>
 	<a href="https://www.youtube.com/watch?v={{ item.video_id }}">Watch</a><span id="sb" style="display:none">.
-	<a href="javascript:load_sb()">Storyboard</a></span><br/>
+	<a href="javascript:sb_load()">Show storyboard</a></span><br/>
 	Published at {{ item.video_published_at }}.
 	Estimated air date {{ item.video_published_at|to_date }}
 	<form action="/save-detail/{{ item.video_id }}" method="post">

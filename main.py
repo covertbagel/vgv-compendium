@@ -39,6 +39,16 @@ Entry = namedtuple('Entry', 'author notes timestamp')
 Item = namedtuple('Item', 'title video_id video_published_at')
 
 
+def base():
+    user = users.get_current_user()
+    return {
+        'admin': users.is_current_user_admin(),
+        'email': user.email() if user else '',
+        'host': _HOST,  # TODO: Use localhost:8080 on dev.
+        'login': '' if user else users.create_login_url('/'),
+    }
+
+
 @app.template_filter('to_date')
 def to_date(d):
     d = datetime.fromisoformat(d[:-1]) - _DATE_CORRECTION
@@ -47,14 +57,10 @@ def to_date(d):
 
 @app.route('/')
 def root():
-    user = users.get_current_user()
     return render_template('index.html',
-                           admin=users.is_current_user_admin(),
-                           email=user.email() if user else '',
-                           host=_HOST,  # TODO: Use localhost:8080 on dev.
                            items=playlist_items(),
-                           login='' if user else users.create_login_url('/'),
-                           notes=get_derived_notes())
+                           notes=get_derived_notes(),
+                           **base())
 
 
 @app.route('/csv')
@@ -85,12 +91,12 @@ def detail(video_id):
         abort(404)
     detail = get_detail(video_id)
     return render_template('detail.html',
-                           admin=users.is_current_user_admin(),
                            detail=detail,
                            item=item,
                            msg=request.args.get('msg'),
                            next=next,
-                           prev=prev)
+                           prev=prev,
+                           **base())
 
 
 @app.route('/raw-info/<video_id>')
