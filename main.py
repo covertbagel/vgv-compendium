@@ -3,6 +3,7 @@ from csv import writer
 from datetime import datetime, timedelta
 from io import BytesIO, StringIO
 from json import dumps, loads
+from os import getenv
 import re
 from time import sleep
 
@@ -10,7 +11,7 @@ from flask import abort, Flask, redirect, render_template, request, send_file, u
 from google.appengine.api import memcache, users, wrap_wsgi_app
 from google.cloud import datastore
 from requests import Session
-import yt_dlp
+from yt_dlp import YoutubeDL
 
 from secrets import YT_DATA_API_KEY
 
@@ -22,7 +23,6 @@ _CACHE_SECS_LONG = 7 * 86400  # 1 week.
 _CACHE_SECS_SHORT = 1800  # 30 minutes.
 _DATE_CORRECTION = timedelta(hours=4, minutes=10)
 _DERIVED_NOTES_KEY = 'derived_notes'
-_HOST = 'vgv-compendium.uc.r.appspot.com'
 _PARAMS = {
     'key': YT_DATA_API_KEY,
     'maxResults': '50',
@@ -31,7 +31,8 @@ _PARAMS = {
 }
 _PATTERN_ANCHOR = re.compile('(egg|event) (\d+)ʹ?')
 _PATTERN_MACRO = re.compile('!(egg|event)')
-_URL = 'https://www.googleapis.com/youtube/v3/playlistItems'
+_URL_DEV = 'http://localhost:8080'
+_URL_PROD = 'https://vgv-compendium.uc.r.appspot.com'
 _WRITE_LOCK_KEY = 'write_lock'
 
 
@@ -39,13 +40,17 @@ Entry = namedtuple('Entry', 'author notes timestamp')
 Item = namedtuple('Item', 'title video_id video_published_at')
 
 
-def base():
+def is_prod():
+    return getenv('GAE_ENV', '').startswith('standard')
+
+
+def base_context():
     user = users.get_current_user()
     return {
         'admin': users.is_current_user_admin(),
         'email': user.email() if user else '',
-        'host': _HOST,  # TODO: Use localhost:8080 on dev.
-        'login': '' if user else users.create_login_url('/'),
+        'login': '' if user else users.create_login_url(request.path),
+        'url': (_URL_PROD if is_prod() else _URL_DEV) + request.path,
     }
 
 
@@ -60,7 +65,7 @@ def root():
     return render_template('index.html',
                            items=playlist_items(),
                            notes=get_derived_notes(),
-                           **base())
+                           **base_context())
 
 
 @app.route('/csv')
@@ -96,7 +101,7 @@ def detail(video_id):
                            msg=request.args.get('msg'),
                            next=next,
                            prev=prev,
-                           **base())
+                           **base_context())
 
 
 @app.route('/raw-info/<video_id>')
@@ -115,8 +120,7 @@ def save_detail(video_id):
     notes = request.form.get('notes', '').strip()
     if len(notes) > 100:
         return redirect(url_for('detail',
-                msg=('Notes must be ≤100 characters.'
-                     ' Can bump limit if needed, lmk'),
+                msg='Notes currently must be ≤100 characters',
                 video_id=video_id))
     if 'ʹ' in notes:
         return redirect(url_for('detail',
@@ -215,7 +219,7 @@ def item(i):
 
 def get_info(item):
     # Info can be >1MB after pickling so can't easily memcache.
-    with yt_dlp.YoutubeDL(params={'format': 'sb0'}, auto_init=False) as ydl:
+    with YoutubeDL(params={'format': 'sb0'}, auto_init=False) as ydl:
         ydl.get_info_extractor('Youtube')
         return ydl.extract_info(f'http://youtube.com/watch?v={item.video_id}',
                                 download=False)
@@ -338,7 +342,8 @@ def playlist_items():
 
 def playlist_items_page(session, page_token):
     params = {'page_token': page_token} if page_token else {}
-    result = session.get(_URL, params=params).json()
+    result = session.get('https://www.googleapis.com/youtube/v3/playlistItems',
+                         params=params).json()
     return ([item(i) for i in result['items']],
             result.get('nextPageToken', None))  # Missing in last page.
 
