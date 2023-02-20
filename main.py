@@ -21,13 +21,18 @@ db = datastore.Client()
 
 _CACHE_SECS_LONG = 7 * 86400  # 1 week.
 _CACHE_SECS_SHORT = 1800  # 30 minutes.
-_DATE_CORRECTION = timedelta(hours=4, minutes=10)
+_DATE_OFFSET = timedelta(hours=12)
 _DERIVED_NOTES_KEY = 'derived_notes'
-_PARAMS = {
+_PARAMS_COMMON = {
     'key': YT_DATA_API_KEY,
+}
+_PARAMS_PLAYLIST_ITEMS = {
     'maxResults': '50',
-    'part': 'contentDetails,snippet',
+    'part': 'snippet',
     'playlistId': 'PLI6HmVcz0NXquDc4QenBMxidVeFue6E08',
+}
+_PARAMS_VIDEOS = {
+    'part': 'liveStreamingDetails',
 }
 _PATTERN_ANCHOR = re.compile('(egg|event) (\d+)ʹ?')
 _PATTERN_MACRO = re.compile('!(egg|event)')
@@ -37,7 +42,7 @@ _WRITE_LOCK_KEY = 'write_lock'
 
 
 Entry = namedtuple('Entry', 'author notes timestamp')
-Item = namedtuple('Item', 'title video_id video_published_at')
+Item = namedtuple('Item', 'start_time title video_id')
 
 
 def is_prod():
@@ -56,7 +61,7 @@ def base_context():
 
 @app.template_filter('to_date')
 def to_date(d):
-    d = datetime.fromisoformat(d[:-1]) - _DATE_CORRECTION
+    d = datetime.fromisoformat(d[:-1]) - _DATE_OFFSET
     return f'{d:%Y-%m-%d}'
 
 
@@ -73,10 +78,10 @@ def csv():
     d = datetime.now()
     out = StringIO()
     w = writer(out)
-    w.writerow(['~aired', 'title', 'video id', 'video published at', 'notes'])
+    w.writerow(['~aired', 'start time', 'title', 'video id', 'notes'])
     notes = get_derived_notes()
     for item in playlist_items():
-        row = [to_date(item.video_published_at), *item]
+        row = [to_date(item.start_time), *item]
         if item.video_id in notes:
             row.append(notes[item.video_id])
         w.writerow(row)
@@ -210,13 +215,6 @@ def clean_title(t):
     return t
 
 
-def item(i):
-    return Item(
-            title=clean_title(i['snippet']['title']),
-            video_id=i['contentDetails']['videoId'],
-            video_published_at=i['contentDetails']['videoPublishedAt'])
-
-
 def get_info(item):
     # Info can be >1MB after pickling so can't easily memcache.
     with YoutubeDL(params={'format': 'sb0'}, auto_init=False) as ydl:
@@ -332,18 +330,30 @@ def playlist_items():
     items = []
     page_token = ''
     session = Session()
-    session.params.update(_PARAMS)
+    session.params.update(_PARAMS_COMMON)
     while page_token is not None:
         i, page_token = playlist_items_page(session, page_token)
         items += i
+    items = sorted(items, key=lambda i: i.start_time, reverse=True)
     memcache.add(key, items, time=_CACHE_SECS_SHORT)
     return items
 
 
 def playlist_items_page(session, page_token):
-    params = {'page_token': page_token} if page_token else {}
+    params = _PARAMS_PLAYLIST_ITEMS.copy()
+    if page_token:
+        params['page_token'] = page_token
     result = session.get('https://www.googleapis.com/youtube/v3/playlistItems',
                          params=params).json()
-    return ([item(i) for i in result['items']],
-            result.get('nextPageToken', None))  # Missing in last page.
+    titles = {i['snippet']['resourceId']['videoId']: i['snippet']['title']
+              for i in result['items']}
+    next_page_token = result.get('nextPageToken', None)  # Missing in last page.
+    params = _PARAMS_VIDEOS.copy()
+    params['id'] = ','.join(titles.keys())
+    result = session.get('https://www.googleapis.com/youtube/v3/videos',
+                         params=params).json()
+    items = [Item(start_time=i['liveStreamingDetails']['actualStartTime'],
+                  title=titles[i['id']],
+                  video_id=i['id']) for i in result['items']]
+    return items, next_page_token
 

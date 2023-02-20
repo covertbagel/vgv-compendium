@@ -50,7 +50,7 @@
 				{%- endif %}
 				{%- endwith %}
 			</td>
-			<td>{{ item.video_published_at|to_date }}</td>
+			<td>{{ item.start_time|to_date }}</td>
 			<td class="detail"><a href="/detail/{{ item.video_id }}">🔎</a></td>
 		</tr>
 		{%- endfor %}
