@@ -23,6 +23,7 @@ _CACHE_SECS_LONG = 7 * 86400  # 1 week.
 _CACHE_SECS_SHORT = 1800  # 30 minutes.
 _DATE_OFFSET = timedelta(hours=12)
 _DERIVED_NOTES_KEY = 'derived_notes'
+_MAX_NOTES_LEN = 200
 _PARAMS_COMMON = {
     'key': YT_DATA_API_KEY,
 }
@@ -103,6 +104,7 @@ def detail(video_id):
     return render_template('detail.html',
                            detail=detail,
                            item=item,
+                           max_notes_len=_MAX_NOTES_LEN,
                            msg=request.args.get('msg'),
                            next=next,
                            prev=prev,
@@ -123,9 +125,9 @@ def save_detail(video_id):
     if not item or not users.is_current_user_admin():
         abort(404)
     notes = request.form.get('notes', '').strip()
-    if len(notes) > 100:
+    if len(notes) > _MAX_NOTES_LEN:
         return redirect(url_for('detail',
-                msg='Notes currently must be ≤100 characters',
+                msg=f'Notes must be ≤{_MAX_NOTES_LEN} characters',
                 video_id=video_id))
     if 'ʹ' in notes:
         return redirect(url_for('detail',

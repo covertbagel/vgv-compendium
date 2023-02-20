@@ -116,7 +116,7 @@
 					<li>need at least one anchor for derivation to work</li>
 					<li>derived numbers have a little ʹ to indicate it</li>
 				</ul></li>
-				<li>total length of notes for each video is currently limited to 100 characters</li>
+				<li>total length of notes for each video is currently limited to {{ max_notes_len }} characters</li>
 			</ul>
 		</details>
 		<textarea id="notes" name="notes">{% if detail.entries %}{{ (detail.entries|last).notes }}{% endif %}</textarea><br/>
