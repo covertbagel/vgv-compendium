@@ -369,6 +369,6 @@ async def process_playlist_items(session, items):
     async with session.get('/youtube/v3/videos', params=params) as resp:
         result = await resp.json()
     return [Item(start_time=i['liveStreamingDetails']['actualStartTime'],
-                 title=items[i['id']],
+                 title=clean_title(items[i['id']]),
                  video_id=i['id']) for i in result['items']]
 
