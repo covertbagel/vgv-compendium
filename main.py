@@ -1,3 +1,4 @@
+import asyncio
 from collections import namedtuple
 from csv import writer
 from datetime import datetime, timedelta
@@ -7,10 +8,10 @@ from os import getenv
 import re
 from time import sleep
 
+from aiohttp import ClientSession
 from flask import abort, Flask, redirect, render_template, request, send_file, url_for
 from google.appengine.api import memcache, users, wrap_wsgi_app
 from google.cloud import datastore
-from requests import Session
 from yt_dlp import YoutubeDL
 
 from secrets import YT_DATA_API_KEY
@@ -329,33 +330,45 @@ def playlist_items():
     key = 'playlist_items'
     if items := memcache.get(key):
         return items
-    items = []
-    page_token = ''
-    session = Session()
-    session.params.update(_PARAMS_COMMON)
-    while page_token is not None:
-        i, page_token = playlist_items_page(session, page_token)
-        items += i
+    items = asyncio.run(load_playlist_items())
     items = sorted(items, key=lambda i: i.start_time, reverse=True)
     memcache.add(key, items, time=_CACHE_SECS_SHORT)
     return items
 
 
-def playlist_items_page(session, page_token):
-    params = _PARAMS_PLAYLIST_ITEMS.copy()
+async def load_playlist_items():
+    page_token = ''
+    tasks = []
+    async with ClientSession('https://www.googleapis.com') as session:
+        while page_token is not None:
+            result = await load_playlist_items_page(session, page_token)
+            page_token = result.get('nextPageToken', None)
+            items = {i['snippet']['resourceId']['videoId']:
+                     i['snippet']['title'] for i in result['items']}
+            task = asyncio.create_task(process_playlist_items(session, items))
+            tasks.append(task)
+        items = []
+        for task in tasks:
+            await task
+            items += task.result()
+        return items
+
+
+async def load_playlist_items_page(session, page_token):
+    params = _PARAMS_COMMON.copy()
+    params.update(**_PARAMS_PLAYLIST_ITEMS)
     if page_token:
         params['page_token'] = page_token
-    result = session.get('https://www.googleapis.com/youtube/v3/playlistItems',
-                         params=params).json()
-    titles = {i['snippet']['resourceId']['videoId']: i['snippet']['title']
-              for i in result['items']}
-    next_page_token = result.get('nextPageToken', None)  # Missing in last page.
-    params = _PARAMS_VIDEOS.copy()
-    params['id'] = ','.join(titles.keys())
-    result = session.get('https://www.googleapis.com/youtube/v3/videos',
-                         params=params).json()
-    items = [Item(start_time=i['liveStreamingDetails']['actualStartTime'],
-                  title=titles[i['id']],
-                  video_id=i['id']) for i in result['items']]
-    return items, next_page_token
+    async with session.get('/youtube/v3/playlistItems', params=params) as resp:
+        return await resp.json()
+
+
+async def process_playlist_items(session, items):
+    params = _PARAMS_COMMON.copy()
+    params.update(id=','.join(items.keys()), **_PARAMS_VIDEOS)
+    async with session.get('/youtube/v3/videos', params=params) as resp:
+        result = await resp.json()
+    return [Item(start_time=i['liveStreamingDetails']['actualStartTime'],
+                 title=items[i['id']],
+                 video_id=i['id']) for i in result['items']]
 
