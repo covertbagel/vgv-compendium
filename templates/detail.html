@@ -93,8 +93,8 @@
 		};
 {%- endblock %}
 {% block style %}
-		img, textarea { border-radius: 1ex; margin-right: 1ex; width: 480px; }
-		textarea { border: solid 1px #999; height: 114px; padding: 2px; width: 474px; }
+		img, textarea { border-radius: 1ex; margin-right: 1ex; max-width: 480px; width: 100%; }
+		textarea { border: solid 1px #999; height: 114px; padding: 2px; max-width: 474px; width: calc(100% - 6px); }
 		button { background: #9994; border: solid 1px #999; }
 		.max { cursor: zoom-in; }
 		.min { cursor: zoom-out; }
@@ -113,11 +113,11 @@
 		{%- if prev %}<a href="/detail/{{ prev.video_id }}">Previous ↓</a>{% endif -%}
 	</div>
 	<div id="viz">
-		<img height="270" src="https://i.ytimg.com/vi/{{ item.video_id }}/maxresdefault.jpg"/>
+		<img src="https://i.ytimg.com/vi/{{ item.video_id }}/maxresdefault.jpg"/>
 	</div>
 	<a href="https://www.youtube.com/watch?v={{ item.video_id }}">Watch</a><span id="sb" style="display:none">.
 	<a href="javascript:sb_load()">Show storyboard</a></span><br/>
-	Started at {{ item.start_time }}.
+	Started at {{ item.start_time }}<br/>
 	Estimated air date {{ item.start_time|to_date }}
 	<form action="/save-detail/{{ item.video_id }}" method="post">
 		<h3><label for="notes">Notes</label></h3>
@@ -143,7 +143,7 @@
 	{%- for entry in detail.entries|reverse %}
 	<details>
 		<summary>At {{ entry.timestamp }}</summary>
-		<pre>{{ entry.notes }}</pre>
+		<div class="indent">{{ entry.notes }}</div>
 	</details>
 	{%- endfor %}
 	{%- endif %}

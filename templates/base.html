@@ -41,15 +41,15 @@
 		* { font-family: Roboto, sans-serif; text-decoration: none; }
 		a { color: #00e; }
 		a:visited { color: #707; }
-		body { background: #fff; color: #000; margin: 1ex; }
+		body { background: #eee; color: #222; margin: 1ex; }
 		body.dark { background :#222; color: #ddd; }
 		body.dark a { color: #99f }
 		body.dark a:visited { color: #a6a; }
 		.toggle { position: fixed; top: 1ex; right: 1ex; }
-		.toggle::after { background: #fff; border-radius: 50%; content: "🌚" ; display: table-cell; height: 3ex; text-align: center; width:3ex; vertical-align: middle; }
+		.toggle::after { background: #eee; border-radius: 50%; content: "🌚" ; display: table-cell; height: 3ex; text-align: center; width:3ex; vertical-align: middle; }
 		body.dark .toggle::after { background: #222; content: "🌞"; }
 		button, input, textarea { background: inherit; color: inherit; }
-		pre { display: block; margin: 0 1em; }
+		.indent { margin: 0 1em; }
 		{%- block style %}{% endblock %}
 	</style>
 	<title>The VGV Compendium{% block title %}{% endblock %}</title>
@@ -62,12 +62,12 @@
 	<a href="javascript:toggle()" class="toggle" style="display:none"></a>
 	{% block preheader %}{% endblock %}<h1>The Video Game Valley <sub>Compendium</sub></h1>{% block postheader %}{% endblock %}
 	<div>
-		{%- if email %}
-			Logged in as {% if admin %}admin {% endif %}{{ email }}.
-			<a href="/_ah/logout?continue={{ url | urlencode }}">Logout</a>.
-		{%- else %}
-			<a href="{{ login }}">Login</a>.
-		{%- endif %}
+	{%- if email %}
+		Logged in as {% if admin %}admin {% endif %}{{ email }}<br/>
+		<a href="/_ah/logout?continue={{ url | urlencode }}">Logout</a>.
+	{%- else %}
+		<a href="{{ login }}">Login</a>.
+	{%- endif %}
 		<a href="mailto:vgv-compendium@covertbagel.com">Email</a>.
 		<a href="https://github.com/covertbagel/vgv-compendium">Source</a>
 	</div>

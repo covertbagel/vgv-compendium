@@ -25,7 +25,7 @@
 			let c = 0;
 			const t = document.getElementsByTagName('tr');
 			const v = filter.value.toLowerCase();
-			for (let i = 2; i < t.length; i++) {
+			for (let i = 1; i < t.length; i++) {
 				const h = t[i].classList.length;
 				if (v && t[i].children[0].innerText.toLowerCase().indexOf(v) < 0) {
 					if (!h) { t[i].classList = ['hide']; }
@@ -34,7 +34,7 @@
 					if (h) { t[i].classList = []; }
 				}
 			}
-			document.getElementById('count').innerText = '' + c + '/' + (t.length-2);
+			document.getElementById('count').innerText = c != t.length-1 ? '' + c + '/' + (t.length-1) : '';
 		};
 {%- endblock %}
 {% block style %}
@@ -44,8 +44,8 @@
 		.hide { display: none; }
 		input { border: solid 1px #999; width: 100%; }
 		table { border-collapse: collapse; }
-		td { padding: 1ex; vertical-align: top; }
-		tr+tr { border-top: solid 1px #999; }
+		td { margin: 0.5ex 0; padding: 1ex; vertical-align: top; }
+		tr:hover { background: #7771; }
 {%- endblock %}
 {% block content %}
 	<h4>
@@ -53,15 +53,14 @@
 		Download as <a href="/csv">CSV</a>
 	</h4>
 	<table>
-		<tr style="display:none"><td><input id="filter" placeholder="filter"/></td><td id="count"></td></tr>
-		<tr><th>title</th><th>~aired</th></tr>
+		<tr style="display:none"><td><input id="filter" placeholder="filter"/></td><td id="count"></td><td></td></tr>
 		{%- for item in items %}
 		<tr>
 			<td>
 				<a href="https://www.youtube.com/watch?v={{ item.video_id }}">{{ item.title }}</a>
 				{%- with n=notes[item.video_id] %}
 				{%- if n %}
-				<pre>{{ n }}</pre>
+				<div class="indent">{{ n }}</div>
 				{%- endif %}
 				{%- endwith %}
 			</td>
