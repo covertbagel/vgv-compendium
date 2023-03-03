@@ -16,6 +16,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+	<link rel="icon" href="/static/vgvheart.svg" type="image/svg+xml"/>
 	<meta charset="utf-8"/>
 	<meta name="viewport" content="width=device-width"/>
 	<script>
@@ -60,7 +61,7 @@
 		if (ls.getItem('dark')) b.classList = ['dark'];
 	</script>
 	<a href="javascript:toggle()" class="toggle" style="display:none"></a>
-	{% block preheader %}{% endblock %}<h1>The Video Game Valley <sub>Compendium</sub></h1>{% block postheader %}{% endblock %}
+	{% block preheader %}{% endblock %}<h1><img width="32" src="/static/vgvheart.svg"/> The Video Game Valley <sub>Compendium</sub></h1>{% block postheader %}{% endblock %}
 	<div>
 	{%- if email %}
 		Logged in as {% if admin %}admin {% endif %}{{ email }}<br/>

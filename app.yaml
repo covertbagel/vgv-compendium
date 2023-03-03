@@ -2,6 +2,10 @@ runtime: python310
 app_engine_apis: true
 
 handlers:
+- url: /static/([^/]+)
+  static_files: static/\1
+  upload: static/(.*)
+  secure: always
 - url: /.*
   script: auto
   secure: always
