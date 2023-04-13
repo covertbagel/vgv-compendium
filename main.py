@@ -18,6 +18,7 @@ from collections import namedtuple
 from csv import writer
 from datetime import datetime, timedelta
 from io import BytesIO, StringIO
+from itertools import chain
 from json import dumps, loads
 from os import getenv
 import re
@@ -46,13 +47,19 @@ _PARAMS_COMMON = {
 _PARAMS_PLAYLIST_ITEMS = {
     'maxResults': '50',
     'part': 'snippet',
-    'playlistId': 'PLI6HmVcz0NXquDc4QenBMxidVeFue6E08',
 }
 _PARAMS_VIDEOS = {
     'part': 'liveStreamingDetails',
 }
 _PATTERN_ANCHOR = re.compile('(egg|event) (\d+)ʹ?')
 _PATTERN_MACRO = re.compile('!(egg|event)')
+_PLAYLIST_IDS_COMPLETE = ('PLI6HmVcz0NXquDc4QenBMxidVeFue6E08',)
+_PLAYLIST_IDS_YEARS = ('PLI6HmVcz0NXqi-Us6_QpjpAQ0pl9v1Pme',  # 2018
+                       'PLI6HmVcz0NXrxdLot9r_QhfGxp8Uty89w',  # 2019
+                       'PLI6HmVcz0NXr8yTXksslqrQYy_sIEGF4s',  # 2020
+                       'PLI6HmVcz0NXpatsJyiVnD4R9BfbeBvsjB',  # 2021
+                       'PLI6HmVcz0NXreGHD1BYQJ4EWaB9z88pCp',  # 2022
+                       'PLI6HmVcz0NXr5Abi-QKrSxhxd3ARD8d19')  # 2023
 _URL_DEV = 'http://localhost:8080'
 _URL_PROD = 'https://vgv-compendium.uc.r.appspot.com'
 _WRITE_LOCK_KEY = 'write_lock'
@@ -341,44 +348,53 @@ def release_write_lock():
     memcache.delete(_WRITE_LOCK_KEY)
 
 
+def playlist_ids():
+    if request.args.get('playlist') == 'complete':
+        return _PLAYLIST_IDS_COMPLETE
+    return _PLAYLIST_IDS_YEARS
+
+
 def playlist_items():
     key = 'playlist_items'
     if items := memcache.get(key):
         return items
-    items = asyncio.run(load_playlist_items())
+    items = asyncio.run(load_playlists())
     items = sorted(items, key=lambda i: i.start_time, reverse=True)
     memcache.add(key, items, time=_CACHE_SECS_SHORT)
     return items
 
 
-async def load_playlist_items():
+async def load_playlists():
+    async with ClientSession('https://www.googleapis.com') as session:
+        return chain.from_iterable(
+                await asyncio.gather(*[load_playlist(playlist_id, session)
+                                       for playlist_id in playlist_ids()]))
+
+
+async def load_playlist(playlist_id, session):
     page_token = ''
     tasks = []
-    async with ClientSession('https://www.googleapis.com') as session:
-        while page_token is not None:
-            result = await load_playlist_items_page(session, page_token)
-            page_token = result.get('nextPageToken', None)
-            items = {i['snippet']['resourceId']['videoId']:
-                     i['snippet']['title'] for i in result['items']}
-            task = asyncio.create_task(process_playlist_items(session, items))
-            tasks.append(task)
-        items = []
-        for task in tasks:
-            await task
-            items += task.result()
-        return items
+    while page_token is not None:
+        result = await load_playlist_page(page_token, playlist_id, session)
+        page_token = result.get('nextPageToken', None)
+        items = {i['snippet']['resourceId']['videoId']:
+                 i['snippet']['title'] for i in result['items']}
+        tasks.append(asyncio.create_task(
+                process_playlist_items(items, session)))
+    return chain.from_iterable(await asyncio.gather(*tasks))
 
 
-async def load_playlist_items_page(session, page_token):
+async def load_playlist_page(page_token, playlist_id, session):
     params = _PARAMS_COMMON.copy()
     params.update(**_PARAMS_PLAYLIST_ITEMS)
     if page_token:
         params['page_token'] = page_token
+    params['playlistId'] = playlist_id
     async with session.get('/youtube/v3/playlistItems', params=params) as resp:
         return await resp.json()
 
 
-async def process_playlist_items(session, items):
+async def process_playlist_items(items, session):
     params = _PARAMS_COMMON.copy()
     params.update(id=','.join(items.keys()), **_PARAMS_VIDEOS)
     async with session.get('/youtube/v3/videos', params=params) as resp:
