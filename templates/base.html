@@ -50,6 +50,7 @@
 		.toggle::after { background: #eee; border-radius: 50%; content: "🌚" ; display: table-cell; height: 3ex; text-align: center; width:3ex; vertical-align: middle; }
 		body.dark .toggle::after { background: #222; content: "🌞"; }
 		button, input, textarea { background: inherit; color: inherit; }
+		h1 > img { float: left; height: 2ex; margin: 0.2ex 0.7ex 1ex 0.2ex; }
 		.indent { margin: 0 1em; }
 		{%- block style %}{% endblock %}
 	</style>
@@ -61,7 +62,7 @@
 		if (ls.getItem('dark')) b.classList = ['dark'];
 	</script>
 	<a href="javascript:toggle()" class="toggle" style="display:none"></a>
-	{% block preheader %}{% endblock %}<h1><img width="32" src="/static/vgvheart.svg"/> The Video Game Valley <sub>Compendium</sub></h1>{% block postheader %}{% endblock %}
+	{% block preheader %}{% endblock %}<h1><img src="/static/vgvheart.svg"/> The Video Game Valley <sub>Compendium</sub></h1>{% block postheader %}{% endblock %}
 	<div>
 	{%- if email %}
 		Logged in as {% if admin %}admin {% endif %}{{ email }}<br/>
