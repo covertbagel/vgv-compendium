@@ -25,7 +25,8 @@ import re
 from time import sleep
 
 from aiohttp import ClientSession
-from flask import abort, Flask, redirect, render_template, request, send_file, url_for
+from flask import (abort, Flask, Markup, redirect, render_template, request,
+                   send_file, url_for)
 from google.appengine.api import memcache, users, wrap_wsgi_app
 from google.cloud import datastore
 from yt_dlp import YoutubeDL
@@ -52,7 +53,8 @@ _PARAMS_VIDEOS = {
     'part': 'liveStreamingDetails',
 }
 _PATTERN_ANCHOR = re.compile('(egg|event) (\d+)ʹ?')
-_PATTERN_MACRO = re.compile('!(egg|event)')
+_PATTERN_CLIP = re.compile('!clip ([A-Za-z0-9_-]+)')
+_PATTERN_COUNTER = re.compile('!(egg|event)')
 _PLAYLIST_IDS_COMPLETE = ('PLI6HmVcz0NXquDc4QenBMxidVeFue6E08',)
 _PLAYLIST_IDS_YEARS = ('PLI6HmVcz0NXqi-Us6_QpjpAQ0pl9v1Pme',  # 2018
                        'PLI6HmVcz0NXrxdLot9r_QhfGxp8Uty89w',  # 2019
@@ -304,7 +306,7 @@ def get_derived_notes():
                 part, start_idx = process_part(
                     part, counts, -1, item_idx, start_idx)
                 n.append(part)
-            notes[i.video_id] = ','.join(reversed(n))
+            notes[i.video_id] = Markup(',').join(reversed(n))
     # Derivation from least to most recent events.
     for i in reversed(items[:start_idx+1]):
         if i.video_id in notes:
@@ -312,7 +314,7 @@ def get_derived_notes():
             for part in notes[i.video_id].split(','):
                 part, _ = process_part(part, counts, 1, 0, 0)
                 n.append(part)
-            notes[i.video_id] = ','.join(n)
+            notes[i.video_id] = Markup(',').join(n)
     # This cleared when details are saved, so can have long cache time.
     memcache.add(_DERIVED_NOTES_KEY, notes, time=_CACHE_SECS_LONG)
     return notes
@@ -320,16 +322,19 @@ def get_derived_notes():
 
 def process_part(part, counts, increment, item_idx, start_idx):
     p = part.strip()
-    m = _PATTERN_MACRO.match(p)
+    m = _PATTERN_COUNTER.match(p)
     if m and m.group(1) in counts:
         name = m.group(1)
         counts[name] += increment
         part = part.replace(p, f'{name} {counts[name]}ʹ', 1)
-    if m := _PATTERN_ANCHOR.match(p):
+    elif m := _PATTERN_ANCHOR.match(p):
         name, count = m.group(1), int(m.group(2))
         if name not in counts:
             start_idx = max(start_idx, item_idx)
         counts[name] = count
+    elif m := _PATTERN_CLIP.match(p):
+        new = f'<a href="https://www.youtube.com/clip/{m.group(1)}">clip</a>'
+        return Markup(part.replace(m.group(0), new, 1)), start_idx
     return part, start_idx
 
 
