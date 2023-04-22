@@ -25,15 +25,16 @@ import re
 from time import sleep
 
 from aiohttp import ClientSession
-from flask import (abort, Flask, Markup, redirect, render_template, request,
-                   send_file, url_for)
+from flask import (abort, flash, Flask, Markup, redirect, render_template,
+                   request, send_file, url_for)
 from google.appengine.api import memcache, users, wrap_wsgi_app
 from google.cloud import datastore
 from yt_dlp import YoutubeDL
 
-from secrets import YT_DATA_API_KEY
+from secrets import FLASK_SECRET_KEY, YT_DATA_API_KEY
 
 app = Flask(__name__)
+app.secret_key = FLASK_SECRET_KEY
 app.wsgi_app = wrap_wsgi_app(app.wsgi_app)
 db = datastore.Client()
 
@@ -130,7 +131,6 @@ def detail(video_id):
                            detail=detail,
                            item=item,
                            max_notes_len=_MAX_NOTES_LEN,
-                           msg=request.args.get('msg'),
                            next=next,
                            prev=prev,
                            **base_context())
@@ -151,26 +151,22 @@ def save_detail(video_id):
         abort(404)
     notes = request.form.get('notes', '').strip()
     if len(notes) > _MAX_NOTES_LEN:
-        return redirect(url_for('detail',
-                msg=f'Notes must be ≤{_MAX_NOTES_LEN} characters',
-                video_id=video_id))
+        flash(f'Notes must be ≤{_MAX_NOTES_LEN} characters', 'error')
+        return redirect(url_for('detail', video_id=video_id))
     if 'ʹ' in notes:
-        return redirect(url_for('detail',
-                msg='Notes may not contain reserved ʹ character',
-                video_id=video_id))
+        flash('Notes may not contain reserved ʹ character', 'error')
+        return redirect(url_for('detail', video_id=video_id))
     while not acquire_write_lock():
         sleep(1)
     try:
         detail = get_detail(video_id)
         if (not detail.entries and not notes) or (
                 detail.entries and detail.entries[-1].notes == notes):
-            return redirect(url_for('detail',
-                    msg='Nothing new to save',
-                    video_id=video_id))
+            flash('Nothing new to save', 'info')
+            return redirect(url_for('detail', video_id=video_id))
         if detail.etag != request.form.get('etag', ''):
-            return redirect(url_for('detail',
-                    msg='Note has already been modified. Update failed',
-                    video_id=video_id))
+            flash('Note has already been modified. Update failed', 'error')
+            return redirect(url_for('detail', video_id=video_id))
         entry = Entry(author=users.get_current_user().email(),
                       notes=notes,
                       timestamp=timestamp())
@@ -178,9 +174,8 @@ def save_detail(video_id):
             detail.insert(entry)
             get_summary()[video_id] = entry
         memcache.delete(_DERIVED_NOTES_KEY)
-        return redirect(url_for('detail',
-                                msg='Update successful!',
-                                video_id=video_id))
+        flash('Update successful!', 'info')
+        return redirect(url_for('detail', video_id=video_id))
     finally:
         release_write_lock()
 

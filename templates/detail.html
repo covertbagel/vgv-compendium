@@ -96,6 +96,9 @@
 		#viz img, textarea { border-radius: 1ex; margin-right: 1ex; max-width: 800px; width: 100%; }
 		textarea { border: solid 1px #999; height: 114px; padding: 2px; max-width: 794px; width: calc(100% - 6px); }
 		button { background: #9994; border: solid 1px #999; }
+		p.error { background: #f002; border: solid #f00 1px; }
+		p.msg { border-radius: 1ex; padding: 1ex; }
+		p.info { background: #0f02; border: solid #0f0 1px; }
 		.max { cursor: zoom-in; }
 		.min { cursor: zoom-out; }
 		#viz { margin: 1em 0; }
@@ -104,9 +107,13 @@
 {% block preheader %}<a href="/">{% endblock %}
 {% block postheader %}</a>{% endblock %}
 {% block content %}
-	{%- if msg %}
-	<p>{{ msg }}</p>
+	{%- with msgs = get_flashed_messages(with_categories=true) %}
+	{%- if msgs %}
+	{%- for cat, msg in msgs %}
+	<p class="msg {{ cat }}">{{ msg }}</p>
+	{%- endfor %}
 	{%- endif %}
+	{%- endwith %}
 	<h2>{{ item.title }}</h2>
 	<div>
 		{%- if next %}<a href="/detail/{{ next.video_id }}">↑ Next</a>{% if prev %}. {% endif %}{% endif %}
