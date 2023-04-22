@@ -109,7 +109,7 @@ def csv():
     for item in playlist_items():
         row = [to_date(item.start_time), *item]
         if item.video_id in notes:
-            row.append(notes[item.video_id])
+            row.append(notes[item.video_id].unescape())
         w.writerow(row)
     out.seek(0)
     return send_file(
