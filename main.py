@@ -326,7 +326,7 @@ def process_part(part, counts, increment, item_idx, start_idx):
     if m and m.group(1) in counts:
         name = m.group(1)
         counts[name] += increment
-        part = part.replace(p, f'{name} {counts[name]}ʹ', 1)
+        part = part.replace(m.group(0), f'{name} {counts[name]}ʹ', 1)
     elif m := _PATTERN_ANCHOR.match(p):
         name, count = m.group(1), int(m.group(2))
         if name not in counts:
@@ -334,7 +334,7 @@ def process_part(part, counts, increment, item_idx, start_idx):
         counts[name] = count
     elif m := _PATTERN_CLIP.match(p):
         new = f'<a href="https://www.youtube.com/clip/{m.group(1)}">clip</a>'
-        return Markup(part.replace(m.group(0), new, 1)), start_idx
+        return Markup(part.replace(p, new, 1)), start_idx
     return part, start_idx
 
 
