@@ -51,7 +51,7 @@ _PARAMS_PLAYLIST_ITEMS = {
     'part': 'snippet',
 }
 _PARAMS_VIDEOS = {
-    'part': 'liveStreamingDetails',
+    'part': 'statistics,liveStreamingDetails',
 }
 _PATTERN_ANCHOR = re.compile('(egg|event) (\d+)ʹ?')
 _PATTERN_CLIP = re.compile('!clip ([A-Za-z0-9_-]+)')
@@ -69,7 +69,7 @@ _WRITE_LOCK_KEY = 'write_lock'
 
 
 Entry = namedtuple('Entry', 'author notes timestamp')
-Item = namedtuple('Item', 'start_time title video_id')
+Item = namedtuple('Item', 'likes start_time title video_id views')
 
 
 def is_prod():
@@ -356,8 +356,11 @@ def playlist_ids():
 
 def playlist_items():
     key = 'playlist_items'
-    if items := memcache.get(key):
-        return items
+    try:
+        if items := memcache.get(key):
+            return items
+    except TypeError:
+        memcache.delete(key)
     items = asyncio.run(load_playlists())
     items = sorted(items, key=lambda i: i.start_time, reverse=True)
     memcache.add(key, items, time=_CACHE_SECS_SHORT)
@@ -399,7 +402,10 @@ async def process_playlist_items(items, session):
     params.update(id=','.join(items.keys()), **_PARAMS_VIDEOS)
     async with session.get('/youtube/v3/videos', params=params) as resp:
         result = await resp.json()
-    return [Item(start_time=i['liveStreamingDetails']['actualStartTime'],
+    return [Item(likes=int(i['statistics']['likeCount']),
+                 start_time=i['liveStreamingDetails']['actualStartTime'],
                  title=clean_title(items[i['id']]),
-                 video_id=i['id']) for i in result['items']]
+                 video_id=i['id'],
+                 views=int(i['statistics']['viewCount']))
+            for i in result['items']]
 
