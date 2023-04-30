@@ -27,6 +27,7 @@
 			const t = document.getElementsByTagName('tr');
 			const v = filter.value.toLowerCase();
 			if (!index) {
+				if (!v) { return; }
 				index = [];
 				for (let i = 1; i < t.length; i++) {
 					index[i] = t[i].children[0].innerText.toLowerCase()
@@ -61,7 +62,7 @@
 		Download as <a href="/csv">CSV</a>
 	</h4>
 	<table>
-		<tr style="display:none"><td><input id="filter" placeholder="filter"/></td><td id="count" colspan="2"></td></tr>
+		<tr style="display:none"><td><input id="filter" placeholder="filter"{% if f %} value="{{ f }}"{% endif %}/></td><td id="count" colspan="2"></td></tr>
 		{%- for item in items %}
 		<tr>
 			<td>

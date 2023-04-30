@@ -95,6 +95,7 @@ def to_date(d):
 @app.route('/')
 def root():
     return render_template('index.html',
+                           f=request.args.get('f'),
                            items=playlist_items(),
                            notes=get_derived_notes(),
                            **base_context())
