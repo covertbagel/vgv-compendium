@@ -46,7 +46,7 @@
 		table { border-collapse: collapse; }
 		td { margin: 0.5ex 0; padding: 1ex; vertical-align: top; }
 		tr:hover { background: #7771; }
-		tr:nth-child(2) { white-space: nowrap; }
+		tr+tr > td:nth-child(2) { font-size: 62%; white-space: nowrap; }
 {%- endblock %}
 {% block content %}
 	<h4>
@@ -54,7 +54,7 @@
 		Download as <a href="/csv">CSV</a>
 	</h4>
 	<table>
-		<tr style="display:none"><td><input id="filter" placeholder="filter"/></td><td id="count"></td><td></td></tr>
+		<tr style="display:none"><td><input id="filter" placeholder="filter"/></td><td id="count" colspan="2"></td></tr>
 		{%- for item in items %}
 		<tr>
 			<td>
@@ -65,7 +65,7 @@
 				{%- endif %}
 				{%- endwith %}
 			</td>
-			<td>{{ item.start_time|to_date }}</td>
+			<td>🗓️{{ item.start_time|to_date }}<br/>👍{{ item.likes }} 📹{{ item.views }}</td>
 			<td class="detail"><a href="/detail/{{ item.video_id }}">🔎</a></td>
 		</tr>
 		{%- endfor %}

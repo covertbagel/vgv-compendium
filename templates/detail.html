@@ -124,8 +124,7 @@
 	</div>
 	<a href="https://www.youtube.com/watch?v={{ item.video_id }}">Watch</a><span id="sb" style="display:none">.
 	<a href="javascript:sb_load()">Show storyboard</a></span><br/>
-	Started at {{ item.start_time }}<br/>
-	Estimated air date {{ item.start_time|to_date }}
+	🗓️{{ item.start_time|to_date }} 👍{{ item.likes }} 📹{{ item.views }}
 	<form action="/save-detail/{{ item.video_id }}" method="post">
 		<h3><label for="notes">Notes</label></h3>
 		<details>
