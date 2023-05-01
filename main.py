@@ -300,7 +300,7 @@ def get_derived_notes():
             n = []
             for part in reversed(s.notes.split(',')):
                 part, start_idx = process_part(
-                    part, counts, -1, item_idx, start_idx)
+                    part, counts, -1, item_idx, start_idx, i.video_id)
                 n.append(part)
             notes[i.video_id] = Markup(',').join(reversed(n))
     # Derivation from least to most recent events.
@@ -308,7 +308,7 @@ def get_derived_notes():
         if i.video_id in notes:
             n = []
             for part in notes[i.video_id].split(','):
-                part, _ = process_part(part, counts, 1, 0, 0)
+                part, _ = process_part(part, counts, 1, 0, 0, i.video_id)
                 n.append(part)
             notes[i.video_id] = Markup(',').join(n)
     # This cleared when details are saved, so can have long cache time.
@@ -316,7 +316,9 @@ def get_derived_notes():
     return notes
 
 
-def process_part(part, counts, increment, item_idx, start_idx):
+# NOTE: Meh this should be encapsulated within a new Derevation class but I
+#       don't want to refactor for that right now.
+def process_part(part, counts, increment, item_idx, start_idx, video_id):
     p = part.strip()
     m = _PATTERN_COUNTER.match(p)
     if m and m.group(1) in counts:
@@ -329,7 +331,10 @@ def process_part(part, counts, increment, item_idx, start_idx):
             start_idx = max(start_idx, item_idx)
         counts[name] = count
     elif m := _PATTERN_CLIP.match(p):
-        new = f'<a href="https://www.youtube.com/clip/{m.group(1)}">clip</a>'
+        clip = m.group(1)
+        path = f'watch?v={video_id}&t={clip}' if (
+                len(clip) < 10 and clip.isdigit()) else f'clip/{clip}'
+        new = f'<a href="https://www.youtube.com/{path}">clip</a>'
         return Markup(part.replace(p, new, 1)), start_idx
     return part, start_idx
 
