@@ -94,10 +94,20 @@ def to_date(d):
 
 @app.route('/')
 def root():
+    f = request.args.get('f', '')
+    flower = f.lower()
+    predicate = lambda x, y: f and flower not in f'{x}\n{y}'.lower()
+    if len(f) > 3 and f[0] == '/' and f[-1] == '/':
+        try:
+            pattern = re.compile(f[1:-1], re.M|re.S)
+            predicate = lambda x, y: pattern.search(f'{x}\n{y}') is None
+        except:
+            pass
     return render_template('index.html',
-                           f=request.args.get('f'),
+                           f=f,
                            items=playlist_items(),
                            notes=get_derived_notes(),
+                           predicate=predicate,
                            **base_context())
 
 
