@@ -26,7 +26,8 @@
 			const t = document.getElementsByTagName('tr');
 			const v = filter.value.toLowerCase();
 			let c = 0, predicate = (x) => v && x.toLowerCase().indexOf(v) < 0;
-			if (v.length > 3 && v[0] === '/' && v[v.length-1] === '/') {
+			if (v.length > 3 && v[0] === '/' && v[v.length-1] === '/'
+					&& v.indexOf('(?') < 0) {
 				try {
 					const re = new RegExp(filter.value.substr(1, v.length-2), 'ms');
 					predicate = (x) => x.search(re) < 0;

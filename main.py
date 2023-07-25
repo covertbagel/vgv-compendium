@@ -97,7 +97,7 @@ def root():
     f = request.args.get('f', '')
     flower = f.lower()
     predicate = lambda x, y: f and flower not in f'{x}\n{y}'.lower()
-    if len(f) > 3 and f[0] == '/' and f[-1] == '/':
+    if len(f) > 3 and f[0] == '/' and f[-1] == '/' and '(?' not in f:
         try:
             pattern = re.compile(f[1:-1], re.M|re.S)
             predicate = lambda x, y: pattern.search(f'{x}\n{y}') is None
