@@ -42,7 +42,7 @@ _CACHE_SECS_LONG = 7 * 86400  # 1 week.
 _CACHE_SECS_SHORT = 1800  # 30 minutes.
 _DATE_OFFSET = timedelta(hours=12)
 _DERIVED_NOTES_KEY = 'derived_notes'
-_MAX_NOTES_LEN = 200
+_MAX_NOTES_LEN = 400
 _PARAMS_COMMON = {
     'key': YT_DATA_API_KEY,
 }
