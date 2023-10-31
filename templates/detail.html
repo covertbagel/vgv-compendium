@@ -36,7 +36,7 @@
 					let total = 0;
 					for (var j = 0; j < f.length; j++) {
 						total += f[j].duration;
-						if (total > 55*60) {
+						if (total > 58.5*60) {
 							return sb_show(j, j+1);
 						}
 					}
@@ -59,21 +59,27 @@
 				h += `<a href="javascript:sb_show(0, ${stop})"/>All</a>. `;
 				h += `<a href="javascript:sb_show(${start-1}, ${stop})"/>More</a>`;
 			}
+			let zoomed = {};
 			for (let i = 0; i < stop; i++) {
+				let f = frags['sb1'][i];
 				if (i >= start) {
 					if (i in zoom) {
-						let t2 = t;
-						for (let j = 0; j < 4; j++) {
-							if (i*4+j >= frags['sb0'].length) break;
-							let f = frags['sb0'][i*4+j];
-							h += `<div>At ${clock(t2)}</div><img class="min" onclick="delete zoom[${i}]; sb_show(${start}, ${stop})" src="${san(f.url)}">`;
-							t2 += f.duration;
+						let seeking = true;
+						let t2 = 0;
+						for (let j = 0; j < frags['sb0'].length; j++) {
+							let f2 = frags['sb0'][j];
+							if (!seeking && t2 >= t+f.duration) break;
+							if (seeking && (t2 == t || t2+f2.duration > t)) seeking = false;
+							t2 += f2.duration;
+							if (seeking || j in zoomed) continue;
+							h += `<div>At ${clock(t2-f2.duration)}</div><img class="min" onclick="delete zoom[${i}]; sb_show(${start}, ${stop})" src="${san(f2.url)}">`;
+							zoomed[j] = 1;
 						}
 					} else {
-						h += `<div>At ${clock(t)}</div><img class="max" onclick="zoom[${i}]=1; sb_show(${start}, ${stop})" src="${san(frags['sb1'][i].url)}">`;
+						h += `<div>At ${clock(t)}</div><img class="max" onclick="zoom[${i}]=1; sb_show(${start}, ${stop})" src="${san(f.url)}">`;
 					}
 				}
-				t += frags['sb1'][i].duration;
+				t += f.duration;
 			}
 			h += `<div>At ${clock(t)}</div>`;
 			if (stop < frags['sb1'].length) {
