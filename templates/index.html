@@ -50,7 +50,7 @@
 				}
 			}
 			document.getElementById('count').innerText = c != t.length-1 ? `${c}/${t.length-1}` : '';
-			history.replaceState(null, '', v ? `?f=${filter.value}` : '?');
+			history.replaceState(null, '', v ? `?f=${encodeURI(filter.value)}` : '?');
 		};
 {%- endblock %}
 {% block style %}
