@@ -68,7 +68,7 @@
 						let t2 = 0;
 						for (let j = 0; j < frags['sb0'].length; j++) {
 							let f2 = frags['sb0'][j];
-							if (!seeking && t2 >= t+f.duration) break;
+							if (!seeking && t2 >= t+f.duration-.1) break;
 							if (seeking && (t2 == t || t2+f2.duration > t)) seeking = false;
 							t2 += f2.duration;
 							if (seeking || j in zoomed) continue;
