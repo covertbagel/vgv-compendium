@@ -25,10 +25,11 @@ import re
 from time import sleep
 
 from aiohttp import ClientSession
-from flask import (abort, flash, Flask, Markup, redirect, render_template,
+from flask import (abort, flash, Flask, redirect, render_template,
                    request, send_file, url_for)
 from google.appengine.api import memcache, users, wrap_wsgi_app
 from google.cloud import datastore
+from markupsafe import Markup
 from yt_dlp import YoutubeDL
 
 from secrets import FLASK_SECRET_KEY, YT_DATA_API_KEY
@@ -62,7 +63,8 @@ _PLAYLIST_IDS_YEARS = ('PLI6HmVcz0NXqi-Us6_QpjpAQ0pl9v1Pme',  # 2018
                        'PLI6HmVcz0NXr8yTXksslqrQYy_sIEGF4s',  # 2020
                        'PLI6HmVcz0NXpatsJyiVnD4R9BfbeBvsjB',  # 2021
                        'PLI6HmVcz0NXreGHD1BYQJ4EWaB9z88pCp',  # 2022
-                       'PLI6HmVcz0NXr5Abi-QKrSxhxd3ARD8d19')  # 2023
+                       'PLI6HmVcz0NXr5Abi-QKrSxhxd3ARD8d19',  # 2023
+                       'PLI6HmVcz0NXp2O9bH2TEquX2rnYFQ-_aa')  # 2024
 _URL_DEV = 'http://localhost:8080'
 _URL_PROD = 'https://vgv-compendium.uc.r.appspot.com'
 _WRITE_LOCK_KEY = 'write_lock'
@@ -365,7 +367,7 @@ def release_write_lock():
 
 
 def playlist_ids():
-    if request.args.get('playlist') == 'complete':
+    if datetime.now().year - len(_PLAYLIST_IDS_YEARS) > 2017:
         return _PLAYLIST_IDS_COMPLETE
     return _PLAYLIST_IDS_YEARS
 
