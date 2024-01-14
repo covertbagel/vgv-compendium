@@ -21,7 +21,7 @@ from io import BytesIO, StringIO
 from itertools import chain
 from json import dumps, loads
 from os import getenv
-import re
+from re import compile
 from time import sleep
 
 from aiohttp import ClientSession
@@ -54,9 +54,9 @@ _PARAMS_PLAYLIST_ITEMS = {
 _PARAMS_VIDEOS = {
     'part': 'statistics,liveStreamingDetails',
 }
-_PATTERN_ANCHOR = re.compile('(egg|event) (\d+)ʹ?')
-_PATTERN_CLIP = re.compile('!clip ([A-Za-z0-9_-]+)')
-_PATTERN_COUNTER = re.compile('!(egg|event)')
+_PATTERN_ANCHOR = compile('(egg|event) (\d+)ʹ?')
+_PATTERN_CLIP = compile('!clip ([A-Za-z0-9_-]+)')
+_PATTERN_COUNTER = compile('!(egg|event)')
 _PLAYLIST_IDS_COMPLETE = ('PLI6HmVcz0NXquDc4QenBMxidVeFue6E08',)
 _PLAYLIST_IDS_YEARS = ('PLI6HmVcz0NXqi-Us6_QpjpAQ0pl9v1Pme',  # 2018
                        'PLI6HmVcz0NXrxdLot9r_QhfGxp8Uty89w',  # 2019
@@ -101,7 +101,7 @@ def root():
     predicate = lambda x, y: f and flower not in f'{x}\n{y}'.lower()
     if len(f) > 3 and f[0] == '/' and f[-1] == '/' and '(?' not in f:
         try:
-            pattern = re.compile(f[1:-1], re.M|re.S)
+            pattern = compile(f[1:-1])
             predicate = lambda x, y: pattern.search(f'{x}\n{y}') is None
         except:
             pass

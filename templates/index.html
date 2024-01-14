@@ -29,7 +29,7 @@
 			if (v.length > 3 && v[0] === '/' && v[v.length-1] === '/'
 					&& v.indexOf('(?') < 0) {
 				try {
-					const re = new RegExp(filter.value.substr(1, v.length-2), 'ms');
+					const re = new RegExp(filter.value.substr(1, v.length-2));
 					predicate = (x) => x.search(re) < 0;
 				} catch {}
 			}
@@ -37,7 +37,7 @@
 				if (!v) return;
 				index = [];
 				for (let i = 1; i < t.length; i++) {
-					index[i] = t[i].children[0].innerText;
+					index[i] = t[i].children[0].innerText.trim().replaceAll('\t', '');
 				}
 			}
 			for (let i = 1; i < t.length; i++) {
