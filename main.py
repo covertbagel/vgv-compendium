@@ -118,10 +118,14 @@ def csv():
     d = datetime.now()
     out = StringIO()
     w = writer(out)
-    w.writerow(['~aired', 'start time', 'title', 'video id', 'notes'])
+    w.writerow(['date', 'video id', 'title', 'likes', 'views', 'notes'])
     notes = get_derived_notes()
     for item in playlist_items():
-        row = [to_date(item.start_time), *item]
+        row = [to_date(item.start_time),
+               item.video_id,
+               item.title,
+               item.likes,
+               item.views]
         if item.video_id in notes:
             row.append(notes[item.video_id].unescape())
         w.writerow(row)
