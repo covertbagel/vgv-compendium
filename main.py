@@ -71,7 +71,7 @@ _WRITE_LOCK_KEY = 'write_lock'
 
 
 Entry = namedtuple('Entry', 'author notes timestamp')
-Item = namedtuple('Item', 'likes start_time title video_id views')
+Item = namedtuple('Item', 'duration_secs likes start_time title video_id views')
 
 
 def is_prod():
@@ -105,12 +105,34 @@ def root():
             predicate = lambda x, y: pattern.search(f'{x}\n{y}') is None
         except:
             pass
+    items = playlist_items()
     return render_template('index.html',
                            f=f,
-                           items=playlist_items(),
+                           items=items,
                            notes=get_derived_notes(),
                            predicate=predicate,
+                           total_duration=format_duration_secs(
+                               sum(i.duration_secs for i in items)),
                            **base_context())
+
+
+def format_duration_secs(duration_secs):
+    parts = []
+    days = duration_secs // 86400
+    if days != 0:
+        parts.append(f'{days}d')
+    duration_secs -= days * 86400
+    hours = duration_secs // 3600
+    if hours != 0:
+        parts.append(f'{hours}h')
+    duration_secs -= hours * 3600
+    minutes = duration_secs // 60
+    if minutes != 0:
+        parts.append(f'{minutes}m')
+    duration_secs -= minutes * 60
+    if duration_secs != 0:
+        parts.append(f'{duration_secs}s')
+    return ' '.join(parts)
 
 
 @app.route('/csv')
@@ -118,12 +140,14 @@ def csv():
     d = datetime.now()
     out = StringIO()
     w = writer(out)
-    w.writerow(['date', 'video id', 'title', 'likes', 'views', 'notes'])
+    w.writerow(['date', 'video id', 'title',
+                'duration mins', 'likes', 'views', 'notes'])
     notes = get_derived_notes()
     for item in playlist_items():
         row = [to_date(item.start_time),
                item.video_id,
                item.title,
+               round(item.duration_secs / 60, 2),
                item.likes,
                item.views]
         if item.video_id in notes:
@@ -248,6 +272,10 @@ class Detail:
 
 
 def clean_title(t):
+    if t.startswith('Simple 2000 Series Ultimate Vol. 9: '
+                    'Bakusou! Manhattan (PS2)'):
+        t = t.replace('Manhattan (PS2)',
+                      'Manhattan: Runabout 3: Neo Age (PS2)', 1)
     common_end = ' | The Video Game Valley'
     if t.endswith(common_end):
         return t[:-len(common_end)]
@@ -419,12 +447,19 @@ async def load_playlist_page(page_token, playlist_id, session):
         return await resp.json()
 
 
+def compute_duration_secs(details):
+    return (datetime.fromisoformat(details['actualEndTime'][:-1])
+            - datetime.fromisoformat(details['actualStartTime'][:-1])).seconds
+
+
 async def process_playlist_items(items, session):
     params = _PARAMS_COMMON.copy()
     params.update(id=','.join(items.keys()), **_PARAMS_VIDEOS)
     async with session.get('/youtube/v3/videos', params=params) as resp:
         result = await resp.json()
-    return [Item(likes=int(i['statistics']['likeCount']),
+    return [Item(duration_secs=compute_duration_secs(
+                     i['liveStreamingDetails']),
+                 likes=int(i['statistics']['likeCount']),
                  start_time=i['liveStreamingDetails']['actualStartTime'],
                  title=clean_title(items[i['id']]),
                  video_id=i['id'],
