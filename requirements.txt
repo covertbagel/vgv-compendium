@@ -1,5 +1,5 @@
-aiohttp==3.9.1
-appengine-python-standard>=1.0.0
-Flask==3.0.0
-google-cloud-datastore==2.19.0
-yt-dlp==2023.12.30
+aiohttp==3.10.10
+appengine-python-standard==1.1.6
+Flask==3.0.3
+google-cloud-datastore==2.20.1
+yt-dlp==2024.11.4
