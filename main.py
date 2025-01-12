@@ -117,6 +117,7 @@ def root():
                            **base_context())
 
 
+@app.template_filter('format_duration_secs')
 def format_duration_secs(duration_secs):
     parts = []
     days = duration_secs // 86400
