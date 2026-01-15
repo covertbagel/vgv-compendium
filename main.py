@@ -65,7 +65,8 @@ _PLAYLIST_IDS_YEARS = ('PLI6HmVcz0NXqi-Us6_QpjpAQ0pl9v1Pme',  # 2018
                        'PLI6HmVcz0NXreGHD1BYQJ4EWaB9z88pCp',  # 2022
                        'PLI6HmVcz0NXr5Abi-QKrSxhxd3ARD8d19',  # 2023
                        'PLI6HmVcz0NXp2O9bH2TEquX2rnYFQ-_aa',  # 2024
-                       'PLI6HmVcz0NXpVajpjFP8sce6I6QRXbgKV')  # 2025
+                       'PLI6HmVcz0NXpVajpjFP8sce6I6QRXbgKV',  # 2025
+                       'PLI6HmVcz0NXoIn84GLhLL02dKpb4Gcd4F')  # 2026
 _URL_DEV = 'http://localhost:8080'
 _URL_PROD = 'https://vgv-compendium.uc.r.appspot.com'
 _WRITE_LOCK_KEY = 'write_lock'
