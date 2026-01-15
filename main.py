@@ -54,7 +54,7 @@ _PARAMS_PLAYLIST_ITEMS = {
 _PARAMS_VIDEOS = {
     'part': 'statistics,liveStreamingDetails',
 }
-_PATTERN_ANCHOR = compile('(egg|event) (\d+)ʹ?')
+_PATTERN_ANCHOR = compile(r'(egg|event) (\d+)ʹ?')
 _PATTERN_CLIP = compile('!clip ([A-Za-z0-9_-]+)')
 _PATTERN_COUNTER = compile('!(egg|event)')
 _PLAYLIST_IDS_COMPLETE = ('PLI6HmVcz0NXquDc4QenBMxidVeFue6E08',)
